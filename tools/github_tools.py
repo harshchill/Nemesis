@@ -36,7 +36,7 @@ def get_pr_files(repo : str , pr_number :int) -> list:
             "filename" : f["filename"],
             "status" : f["status"],
             "additions" : f["additions"],
-            "deletions " : f["deletions"],
+            "deletions" : f["deletions"],
             "patch" : f.get("patch","")
         })
     return result

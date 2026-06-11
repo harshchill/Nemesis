@@ -4,5 +4,5 @@ graph = build_graph()
 
 result = graph.invoke({
    "repo": "harshchill/Vault",
-    "pr_number": 4
+    "pr_number": 1
 })
