@@ -23,3 +23,29 @@ def get_pr_info (repo : str , pr_number : int) -> dict:
         "head_branch": data["head"]["ref"],
         "head_sha": data["head"]["sha"]
     }
+
+def get_pr_files(repo : str , pr_number :int) -> list:
+    url = f"{BASE_URL}/repos/{repo}/pulls/{pr_number}/files"
+    r = requests.get(url,headers=HEADERS)
+    r.raise_for_status()
+    files = r.json()
+
+    result = []
+    for f in files:
+        result.append({
+            "filename" : f["filename"],
+            "status" : f["status"],
+            "additions" : f["additions"],
+            "deletions " : f["deletions"],
+            "patch" : f.get("patch","")
+        })
+    return result
+
+def post_review(repo:str,pr_number:int,body:str)->bool:
+    url = f"{BASE_URL}/repos/{repo}/pulls/{pr_number}/reviews"
+    payload = {
+        "body" : body,
+        "event": "COMMENT"
+    }    
+    r =  requests.post(url,headers=HEADERS, json=payload)
+    return r.status_code in [200,201]

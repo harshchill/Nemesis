@@ -1,6 +1,6 @@
 from typing import TypedDict,Optional,Any,List
 
-class PRReviewAgent(TypedDict):
+class PRReviewState(TypedDict):
     repo : str
     pr_number : int
     pr_info : Optional[dict]
