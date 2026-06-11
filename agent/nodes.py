@@ -1,5 +1,5 @@
 from agent.state import PRReviewState
-from tools.github_tools import get_pr_files,get_pr_info
+from tools.github_tools import get_pr_files,get_pr_info,post_review
 from tools.llm_tools import analyze_file
 import time
 import os
@@ -51,3 +51,24 @@ def analyze_file_node(state:PRReviewState)->dict:
         time.sleep(1)
 
     return {"file_reviews":reviews}
+
+def generate_summary_node(state:PRReviewState)->dict:
+    print("  → Generating summary...")
+    lines = [f"- `{r['filename']}`" for r in state["file_reviews"]]
+    summary = f"Reviewed {len(lines)} file(s):\n" + "\n".join(lines)
+    
+    return {"summary": summary}
+
+def post_review_node(state:PRReviewState)->dict:
+    print("  → Posting to GitHub...")
+    body = "# 🤖 AI Code Review\n\n"
+    body += f"## Summary\n{state['summary']}\n\n---\n\n"
+    
+    for r in state["file_reviews"]:
+        body += f"## `{r['filename']}`\n{r['review']}\n\n---\n\n"
+    
+    body += "*Reviewed by your PR Agent 🤖*"
+
+    success = post_review(state["repo"],state["pr_number"],body)
+    print(f"  → {'✅ Posted!' if success else '❌ Failed'}")
+    return {"posted": success}
