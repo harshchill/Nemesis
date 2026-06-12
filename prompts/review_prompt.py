@@ -17,7 +17,7 @@ OUTPUT FORMAT:
 Output your review in strict Markdown. If the file is clean, output exactly: "✅ **No actionable findings in this file.**"
 
 For each finding, use this exact structure:
-###  [💀 CRITICAL | ⚠️  HIGH | 🔴  MEDIUM | 🟡 LOW]: <Short Title>
+###  [💀 CRITICAL | ⚠️  HIGH | 🟡  MEDIUM | 👀  LOW]: <Short Title>
 **Location:** `<filename>` at line `<N>`
 **Issue:** <Concise explanation of the flaw and its exact potential impact on the application>
 **Recommendation:** <Provide the exact code fix. Use markdown code blocks. If suggesting a replacement, use a diff code block if possible>"""),
