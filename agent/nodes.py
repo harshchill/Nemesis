@@ -1,6 +1,6 @@
 from agent.state import PRReviewState
 from tools.github_tools import get_pr_files, get_pr_info, post_review
-from tools.llm_tools import analyze_file
+from tools.llm_tools import analyze_file , generate_summary
 import time
 import os
 
@@ -49,23 +49,21 @@ def analyze_file_node(state: PRReviewState) -> dict:
                 "review": review,
             }
         )
-        time.sleep(1)
+        time.sleep(3)
 
     return {"file_reviews": reviews}
 
 
 def generate_summary_node(state: PRReviewState) -> dict:
-    print("  > Generating summary...")
-    lines = [f"- `{r['filename']}`" for r in state["file_reviews"]]
-    summary = f"Reviewed {len(lines)} file(s):\n" + "\n".join(lines)
-
+    print("  → Generating summary...")
+    summary = generate_summary(state["file_reviews"],state["pr_info"])
+    print(f"  → Done")
     return {"summary": summary}
 
 
 def post_review_node(state: PRReviewState) -> dict:
     print("  > Posting to GitHub...")
     body = "# Nemesis Review Report\n\n"
-    body += "Terminal-grade review output focused on actionable findings.\n\n"
     body += f"## Summary\n{state['summary']}\n\n---\n\n"
 
     for r in state["file_reviews"]:

@@ -3,6 +3,6 @@ from agent.graph import build_graph
 graph = build_graph()
 
 result = graph.invoke({
-   "repo": "harshchill/Vault",
-    "pr_number": 1
+   "repo": "harshchill/prepdom",
+    "pr_number": 7
 })
