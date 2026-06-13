@@ -21,14 +21,14 @@ def should_skip(filename: str) -> bool:
 
 def fetch_pr_info_node(state: PRReviewState) -> dict:
     print(f"  > Fetching PR #{state['pr_number']}...")
-    info = get_pr_info(state["repo"], state["pr_number"])
+    info = get_pr_info(state["repo"], state["pr_number"] ,state["token"])
     print(f"  > '{info['title']}' by @{info['author']}")
     return {"pr_info": info}
 
 
 def fetch_files_node(state: PRReviewState) -> dict:
     print("  > Fetching changed files...")
-    all_files = get_pr_files(state["repo"], state["pr_number"])
+    all_files = get_pr_files(state["repo"], state["pr_number"] ,state["token"])
     files = [f for f in all_files if not should_skip(f["filename"])]
 
     skipped = len(all_files) - len(files)
@@ -42,7 +42,7 @@ def analyze_file_node(state: PRReviewState) -> dict:
     reviews = []
     for i, file in enumerate(state["changed_files"]):
         print(f"    [{i + 1}/{len(state['changed_files'])}] {file['filename']}")
-        review = analyze_file(file, state["pr_info"])
+        review = analyze_file(file, state["pr_info"] )
         reviews.append(
             {
                 "filename": file["filename"],
@@ -71,6 +71,6 @@ def post_review_node(state: PRReviewState) -> dict:
 
     body += "_Issued by Nemesis_"
 
-    success = post_review(state["repo"], state["pr_number"], body)
+    success = post_review(state["repo"], state["pr_number"], body, state["token"])
     print(f"  > {'Posted' if success else 'Failed'}")
     return {"posted": success}

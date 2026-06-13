@@ -10,7 +10,7 @@
                                                         
 ```
 
-Nemesis is a terminal-style PR review agent that fetches pull request changes from GitHub, runs focused LLM-based review passes, and posts the result back as a GitHub review comment.
+Nemesis is a  PR review agent that fetches pull request changes from GitHub, runs focused LLM-based review passes, and posts the result back as a GitHub review comment.
 
 ## What It Does
 

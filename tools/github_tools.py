@@ -3,15 +3,17 @@ from config.setting import GITHUB_TOKEN
 
 BASE_URL = "https://api.github.com" 
 
-HEADERS = {
-    "authorization": f"bearer {GITHUB_TOKEN}",
-    "accept":"application/vnd.github.v3+json"
-}
+def get_header(token :str) -> dict:
+    return{
+         "authorization": f"bearer {token}",
+         "accept":"application/vnd.github.v3+json"
+    }
 
-def get_pr_info (repo : str , pr_number : int) -> dict:
+
+def get_pr_info (repo : str , pr_number : int ,token : str) -> dict:
     url = f"{BASE_URL}/repos/{repo}/pulls/{pr_number}"
 
-    r = requests.get(url,headers=HEADERS)
+    r = requests.get(url,headers=get_header(token))
     r.raise_for_status()
     data = r.json()
 
@@ -24,9 +26,9 @@ def get_pr_info (repo : str , pr_number : int) -> dict:
         "head_sha": data["head"]["sha"]
     }
 
-def get_pr_files(repo : str , pr_number :int) -> list:
+def get_pr_files(repo : str , pr_number :int , token :str) -> list:
     url = f"{BASE_URL}/repos/{repo}/pulls/{pr_number}/files"
-    r = requests.get(url,headers=HEADERS)
+    r = requests.get(url,headers=get_header(token))
     r.raise_for_status()
     files = r.json()
 
@@ -41,11 +43,11 @@ def get_pr_files(repo : str , pr_number :int) -> list:
         })
     return result
 
-def post_review(repo:str,pr_number:int,body:str)->bool:
+def post_review(repo:str,pr_number:int,body:str ,token :str)->bool:
     url = f"{BASE_URL}/repos/{repo}/pulls/{pr_number}/reviews"
     payload = {
         "body" : body,
         "event": "COMMENT"
     }    
-    r =  requests.post(url,headers=HEADERS, json=payload)
+    r =  requests.post(url,headers=get_header(token), json=payload)
     return r.status_code in [200,201]
