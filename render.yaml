@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: pr-review-agent
+    name: Nemesis
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn webhook:app

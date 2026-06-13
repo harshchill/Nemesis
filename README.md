@@ -1,6 +1,5 @@
 # Nemesis
 
-```text
 ███╗   ██╗███████╗███╗   ███╗███████╗███████╗██╗███████╗
 ████╗  ██║██╔════╝████╗ ████║██╔════╝██╔════╝██║██╔════╝
 ██╔██╗ ██║█████╗  ██╔████╔██║█████╗  ███████╗██║███████╗
@@ -8,96 +7,141 @@
 ██║ ╚████║███████╗██║ ╚═╝ ██║███████╗███████║██║███████║
 ╚═╝  ╚═══╝╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝╚══════╝
                                                         
-```
 
-Nemesis is a  PR review agent that fetches pull request changes from GitHub, runs focused LLM-based review passes, and posts the result back as a GitHub review comment.
+Nemesis is a GitHub App powered PR review agent. It receives pull request webhook events, authenticates as the installed GitHub App, fetches the PR diff, runs focused LLM review passes, and posts a review comment back to the pull request.
 
-## What It Does
+The goal is simple: surface real defects with a direct, professional review style.
 
-- Reads PR metadata and changed files from the GitHub API.
-- Skips noisy or low-value files such as lockfiles and common binary assets.
-- Sends each diff chunk to the review model with a strict review prompt.
-- Builds a compact review summary and posts it back to the PR.
+## Features
 
-## Design Goals
+- Runs from a Flask webhook server.
+- Verifies GitHub webhook signatures with `GITHUB_WEBHOOK_SECRET`.
+- Authenticates as a GitHub App using an app ID and private key.
+- Exchanges the GitHub App JWT for an installation access token.
+- Handles pull request events only.
+- Reviews PRs when they are opened, reopened, or synchronized.
+- Fetches PR metadata and changed files from the GitHub REST API.
+- Skips low-value files such as lockfiles, minified assets, and common binary assets.
+- Uses a strict review prompt to prioritize actionable findings.
+- Posts a consolidated GitHub pull request review comment.
 
-- Professional and direct output.
-- No emojis, filler, or generic AI tone.
-- Actionable findings over broad commentary.
-- Clear terminal-style feedback while the agent runs.
+## Webhook Flow
+
+1. GitHub sends a webhook request to `POST /webhook`.
+2. `webhook.py` verifies the `X-Hub-Signature-256` header.
+3. The handler logs the received GitHub event and action.
+4. Non-`pull_request` events are ignored with a `200` response.
+5. Pull request actions other than `opened`, `synchronize`, and `reopened` are ignored.
+6. Nemesis reads the repository name, PR number, and installation ID from the payload.
+7. The app generates a GitHub App JWT and exchanges it for an installation token.
+8. The LangGraph workflow fetches PR data, reviews changed files, builds a summary, and posts the review.
 
 ## Project Structure
 
-### `main.py`
-
-Entry point that builds the LangGraph workflow and invokes the review run.
-
-### `agent/graph.py`
-
-Defines the review pipeline:
-
-1. Fetch PR metadata
-2. Fetch changed files
-3. Analyze each file
-4. Build a summary
-5. Post the review to GitHub
-
-### `agent/nodes.py`
-
-Implements the workflow nodes and the GitHub review body formatting.
-
-### `agent/state.py`
-
-Typed state container for the LangGraph workflow.
-
-### `prompts/review_prompt.py`
-
-The review contract for the model. This is where the review personality is enforced:
-
-- strict
-- concise
-- specific
-- no fluff
-
-### `tools/github_tools.py`
-
-GitHub REST API helpers for PR metadata, changed files, and posting reviews.
-
-### `tools/llm_tools.py`
-
-LLM wrapper that sends each diff to the review prompt and returns the model response.
-
-### `config/setting.py`
-
-Loads environment variables and creates the model client.
+```text
+.
+|-- webhook.py              # Flask webhook entry point for GitHub App events
+|-- main.py                 # Manual graph invocation entry point for local testing
+|-- auth/
+|   `-- github.py           # GitHub App JWT and installation token helpers
+|-- agent/
+|   |-- graph.py            # LangGraph workflow definition
+|   |-- nodes.py            # Workflow node implementations
+|   `-- state.py            # Typed workflow state
+|-- tools/
+|   |-- github_tools.py     # GitHub REST API helpers
+|   `-- llm_tools.py        # LLM review and summary helpers
+|-- prompts/
+|   |-- review_prompt.py    # Per-file review prompt
+|   `-- summary_prompt.py   # Final summary prompt
+`-- config/
+    `-- setting.py          # Environment loading and model client setup
+```
 
 ## Environment Variables
 
-Create a `.env` file with:
+Create a `.env` file in the project root.
 
 ```env
-GITHUB_TOKEN=your_github_token
 GROQ_API_KEY=your_groq_api_key
+
+GITHUB_APP_ID=your_github_app_id
+GITHUB_WEBHOOK_SECRET=your_webhook_secret
+GITHUB_PRIVATE_KEY_PATH=path_to_your_github_app_private_key.pem
 ```
 
-## How The Review Works
+`GITHUB_TOKEN` may still be useful for older manual tests, but the webhook app flow uses GitHub App installation tokens instead.
 
-Nemesis does not try to sound helpful by default. It tries to be correct.
+Keep `.env` and private key files out of git. If a real token or private key is committed, shared, or exposed, rotate it immediately.
 
-The review prompt tells the model to:
+## GitHub App Setup
 
-- call out real defects
-- reference file and line locations when possible
-- avoid style noise unless it hides a bug
-- return `No actionable findings.` when nothing is worth flagging
+Create a GitHub App and configure:
 
-That makes the output easier to scan in a PR and much less like a generic chatbot answer.
+- Webhook URL: `https://your-public-url/webhook`
+- Webhook secret: the same value as `GITHUB_WEBHOOK_SECRET`
+- Subscribe to events: `Pull request`
+- Repository permissions:
+  - Pull requests: read and write
+  - Contents: read
+  - Metadata: read
 
-## Running It
+Install the app on the repositories Nemesis should review.
 
-The current setup in `main.py` is hardcoded to a repository and PR number for testing. Update those values or wire the graph into your own trigger flow.
+For local development, expose the Flask server with a tunnel such as ngrok and set the GitHub App webhook URL to:
 
-Typical flow:
+```text
+https://your-ngrok-url.ngrok-free.app/webhook
+```
+
+The path must be `/webhook`. Posting to `/` will return `404` because the app does not register a root webhook route.
+
+## Running The Webhook Server
+
+Start the Flask server:
+
+```bash
+python webhook.py
+```
+
+By default, it runs on:
+
+```text
+http://127.0.0.1:5000
+```
+
+The webhook endpoint is:
+
+```text
+POST http://127.0.0.1:5000/webhook
+```
+
+When a delivery arrives, the server logs the GitHub event and action:
+
+```text
+Received GitHub event='pull_request', action='opened'
+```
+
+If GitHub sends a `ping`, `push`, or unsupported pull request action, Nemesis returns `200` with an ignored status and does not run the review workflow.
+
+## Review Workflow
+
+The LangGraph workflow runs these nodes:
+
+1. Fetch PR metadata.
+2. Fetch changed files.
+3. Filter out noisy files.
+4. Analyze each remaining file with the review prompt.
+5. Generate a summary.
+6. Post a GitHub review comment.
+
+The posted review includes a summary and per-file review sections.
+
+## Manual Testing
+
+`main.py` can still be used for direct local graph testing, but the production-style flow is now the GitHub App webhook in `webhook.py`.
+
+For manual invocation, build the graph and provide:
 
 ```python
 from agent.graph import build_graph
@@ -106,11 +150,48 @@ graph = build_graph()
 graph.invoke({
     "repo": "owner/repo",
     "pr_number": 123,
+    "token": "github_installation_or_access_token",
 })
 ```
 
+## Troubleshooting
+
+### `POST / HTTP/1.1" 404`
+
+The webhook URL is missing the `/webhook` path. Use:
+
+```text
+https://your-public-url/webhook
+```
+
+### `POST /webhook HTTP/1.1" 200` but no review is posted
+
+Check the console log:
+
+```text
+Received GitHub event='...', action='...'
+```
+
+Nemesis only runs for:
+
+- `event='pull_request'`
+- `action='opened'`
+- `action='synchronize'`
+- `action='reopened'`
+
+Other events are acknowledged and ignored.
+
+### `401 Invalid signature`
+
+The webhook secret in GitHub does not match `GITHUB_WEBHOOK_SECRET`, or the request was not sent by GitHub with the correct signature header.
+
+### Review workflow starts but no comment appears
+
+Check that the GitHub App has pull request write permission and is installed on the target repository.
+
 ## Notes
 
-- The repository currently includes a local `venv/` folder, which should stay untracked.
-- The agent skips lockfiles and common binary assets to keep review cost focused on meaningful source changes.
-- If you want, the next upgrade is to make the posted review more structured per finding, with one bullet per issue and inline severity tags.
+- The local `venv/` directory should stay untracked.
+- Private key `.pem` files should stay untracked.
+- The Flask development server is for local development only. Use a production WSGI server for deployment.
+- Review output is intentionally direct and concise. The agent should return `No actionable findings.` when there is nothing useful to flag.
