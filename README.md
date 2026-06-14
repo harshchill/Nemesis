@@ -1,4 +1,15 @@
-# Nemesis                                   
+# Nemesis    
+
+```brand
+███╗   ██╗███████╗███╗   ███╗███████╗███████╗██╗███████╗
+████╗  ██║██╔════╝████╗ ████║██╔════╝██╔════╝██║██╔════╝
+██╔██╗ ██║█████╗  ██╔████╔██║█████╗  ███████╗██║███████╗
+██║╚██╗██║██╔══╝  ██║╚██╔╝██║██╔══╝  ╚════██║██║╚════██║
+██║ ╚████║███████╗██║ ╚═╝ ██║███████╗███████║██║███████║
+╚═╝  ╚═══╝╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝╚══════╝
+                                                        
+```
+
 
 Nemesis is a GitHub App powered PR review agent. It receives pull request webhook events, authenticates as the installed GitHub App, fetches the PR diff, runs focused LLM review passes, and posts a review comment back to the pull request.
 
@@ -52,6 +63,7 @@ The goal is simple: surface real defects with a direct, professional review styl
 
 ##Main Architecture Flow
 
+```text
 ┌─────────────┐
 │ GitHub User │
 └──────┬──────┘
@@ -111,6 +123,7 @@ The goal is simple: surface real defects with a direct, professional review styl
 │ GitHub Pull Request Review  │
 │ Comment Posted             │
 └─────────────────────────────┘
+```
 
 ## Environment Variables
 
