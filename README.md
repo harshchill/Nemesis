@@ -1,12 +1,4 @@
-# Nemesis
-
-███╗   ██╗███████╗███╗   ███╗███████╗███████╗██╗███████╗
-████╗  ██║██╔════╝████╗ ████║██╔════╝██╔════╝██║██╔════╝
-██╔██╗ ██║█████╗  ██╔████╔██║█████╗  ███████╗██║███████╗
-██║╚██╗██║██╔══╝  ██║╚██╔╝██║██╔══╝  ╚════██║██║╚════██║
-██║ ╚████║███████╗██║ ╚═╝ ██║███████╗███████║██║███████║
-╚═╝  ╚═══╝╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝╚══════╝
-                                                        
+# Nemesis                                   
 
 Nemesis is a GitHub App powered PR review agent. It receives pull request webhook events, authenticates as the installed GitHub App, fetches the PR diff, runs focused LLM review passes, and posts a review comment back to the pull request.
 
@@ -57,6 +49,68 @@ The goal is simple: surface real defects with a direct, professional review styl
 `-- config/
     `-- setting.py          # Environment loading and model client setup
 ```
+
+##Main Architecture Flow
+
+┌─────────────┐
+│ GitHub User │
+└──────┬──────┘
+       │ Creates / Updates PR
+       ▼
+┌─────────────────────────────┐
+│ GitHub Repository           │
+│ Pull Request Event          │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ GitHub Webhook              │
+│ POST /webhook               │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Flask Webhook Server        │
+│ webhook.py                  │
+│ Signature Verification      │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ GitHub App Authentication   │
+│ Generate JWT                │
+│ Exchange Installation Token │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌────────────────────────────────────┐
+│ Nemesis LangGraph Workflow         │
+│                                    │
+│ 1. Fetch PR Metadata               │
+│ 2. Fetch Changed Files             │
+│ 3. Filter Noisy Files              │
+│ 4. LLM Code Review                 │
+│ 5. Generate Summary                │
+│ 6. Build Review Report             │
+└──────────────┬─────────────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Groq LLM                    │
+│ Review Prompt               │
+│ Summary Prompt              │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Consolidated Review Output  │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ GitHub Pull Request Review  │
+│ Comment Posted             │
+└─────────────────────────────┘
 
 ## Environment Variables
 
