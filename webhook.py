@@ -1,7 +1,8 @@
 import hmac
 import hashlib
-from flask import Flask ,request,jsonify
 import os
+import threading
+from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from auth.github import get_installation_token
 from agent.graph import build_graph
@@ -47,13 +48,24 @@ def webhook():
     # now run the agent
     graph = build_graph()
 
-    graph.invoke({
-         "repo": repo,
-         "pr_number": pr_number,
-         "token": token
-    })
+    def run_agent_async(repo_name, pr_num, access_token):
+        try:
+            graph.invoke({
+                 "repo": repo_name,
+                 "pr_number": pr_num,
+                 "token": access_token
+            })
+            print(f"✅ Successfully processed and posted review for PR #{pr_num} in {repo_name}", flush=True)
+        except Exception as e:
+            print(f"❌ Error processing review for PR #{pr_num} in {repo_name}: {e}", flush=True)
 
-    return jsonify({"status": "review posted"}), 200
+    threading.Thread(
+        target=run_agent_async,
+        args=(repo, pr_number, token),
+        daemon=True
+    ).start()
+
+    return jsonify({"status": "processing review in background"}), 200
 
 if __name__ == "__main__":
      app.run(port=5000, debug=True)

@@ -49,7 +49,7 @@ def analyze_file_node(state: PRReviewState) -> dict:
                 "review": review,
             }
         )
-        time.sleep(3)
+        time.sleep(1)
 
     return {"file_reviews": reviews}
 
