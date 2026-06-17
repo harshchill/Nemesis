@@ -61,7 +61,7 @@ The goal is simple: surface real defects with a direct, professional review styl
     `-- setting.py          # Environment loading and model client setup
 ```
 
-##Main Architecture Flow
+## Main Architecture Flow
 
 <img width="2816" height="1536" alt="Gemini_Generated_Image_xafp2mxafp2mxafp" src="https://github.com/user-attachments/assets/bcb077d1-e4b2-48f4-999d-e4ca34261de5" />
 
